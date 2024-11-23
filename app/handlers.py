@@ -9,7 +9,7 @@ from bot_instance import bot
 import os
 import subprocess
 from aiogram import types
-from aiogram.types import InputFile
+from aiogram.types import FSInputFile
 import whisper
 
 # middleware
@@ -40,9 +40,20 @@ async def cmd_start(message: Message):
         # reply_markup =  await kb.inline_cars()
     )
 
+
 @router.message(Command('help'))
 async def get_help(message: Message):
-  await message.answer('Это Команда /help')
+    await message.answer('Это Команда /help')
+    
+    # Ensure the file exists
+    audio_file = os.path.join("Easy Turkish Dialogs For Beginners.mp3")
+    try:
+        await bot.send_audio(chat_id=message.chat.id, audio=FSInputFile(audio_file))
+    except FileNotFoundError:
+        await message.answer("Аудиофайл не найден.")
+    except Exception as e:
+        await message.answer(f"Произошла ошибка при отправке аудио: {str(e)}")
+
 
 @router.message(F.text == 'How are you?')
 async def how_are_you(message: Message):
@@ -111,7 +122,7 @@ async def process_video_link(message: Message, state: FSMContext):
                     await message.reply("Файл не найден.")
                     return
                 await message.reply("Файл найден, отправляем...")
-                await bot.send_video(chat_id=message.chat.id, video=types.InputFile(file_path))
+                await bot.send_video(chat_id=message.chat.id, video=types.FSInputFile(file_path))
                 os.remove(file_path)
                 break
 
@@ -167,7 +178,7 @@ async def video_to_audio(message: Message, state: FSMContext):
                     # Send the audio file to the user
                     if os.path.isfile(audio_file_path):
                         await message.reply("Аудио найдено, отправляем...")
-                        await bot.send_audio(chat_id=message.chat.id, audio=InputFile(audio_file_path))
+                        await bot.send_audio(chat_id=message.chat.id, audio=FSInputFile(audio_file_path))
 
                         # Remove the audio file after sending
                         os.remove(audio_file_path)
@@ -236,7 +247,7 @@ async def process_subtitles(message: Message, state: FSMContext):
 
                 if os.path.isfile(subtitle_path):
                     await message.reply("Субтитры сгенерированы, отправляем...")
-                    await bot.send_document(chat_id=message.chat.id, document=InputFile(subtitle_path))
+                    await bot.send_document(chat_id=message.chat.id, document=FSInputFile(subtitle_path))
                     
                     os.remove(subtitle_path)
                     os.remove(video_file_path)
@@ -328,7 +339,7 @@ async def process_video_with_subtitles(message: Message, state: FSMContext):
                 # Step 4: Send the video with subtitles
                 if os.path.isfile(output_video_path):
                     await message.reply("Субтитры добавлены, отправляем видео...")
-                    await bot.send_video(chat_id=message.chat.id, video=InputFile(output_video_path))
+                    await bot.send_video(chat_id=message.chat.id, video=FSInputFile(output_video_path))
                     
                     # Cleanup
                     os.remove(output_video_path)
