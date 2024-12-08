@@ -12,7 +12,12 @@ from bot_instance import bot
 import os, subprocess
 from app.middlewares import TestMiddleware
 import requests
-from aiogram.filters.state import StateFilter
+import openai
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 router = Router()
 
@@ -567,8 +572,8 @@ async def summarize_video_start(message: Message, state: FSMContext):
 #         await state.clear()
 
 
-import openai
-openai.api_key = "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"
+# import openai
+# openai.api_key = "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"
 
 @router.message(Reg.waiting_for_summary_video)
 async def process_video_for_summary(message: Message, state: FSMContext):

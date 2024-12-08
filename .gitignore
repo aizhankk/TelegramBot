@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *.so
 
+config.py
+
 *.ogg
 # Virtual environments
 env/
@@ -34,3 +36,5 @@ Thumbs.db
 *.ipynb text eol=lf
 
 downloads/*
+
+.env
