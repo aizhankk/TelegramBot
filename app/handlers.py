@@ -266,6 +266,10 @@ def format_time(seconds: float) -> str:
 
 
 
+
+
+
+
 @router.message(lambda message: message.text == "Добавить субтитры к Youtube видео")
 async def add_subtitles_to_video(message: Message, state: FSMContext):
     await message.answer("Пожалуйста, отправьте ссылку на видео, чтобы добавить субтитры.")
@@ -359,6 +363,135 @@ def format_time(seconds: float) -> str:
 
 
 
+
+
+
+
+
+
+
+
+# @router.message(lambda message: message.text == "Добавить субтитры к Youtube видео")
+# async def add_subtitles_to_video(message: Message, state: FSMContext):
+#     await message.answer("Пожалуйста, отправьте ссылку на видео, чтобы добавить субтитры.")
+#     await state.set_state(Reg.waiting_for_subtitles_link)
+
+# @router.message(Reg.waiting_for_subtitles_link)
+# async def process_video_with_subtitles(message: Message, state: FSMContext):
+#     url = message.text.strip()
+#     if not (url.startswith("http://") or url.startswith("https://")):
+#         await message.reply("Пожалуйста, введите корректную ссылку или нажмите /cancel")
+#         return
+
+#     await message.reply("Видео загружается и обрабатывается, подождите немного...")
+
+#     video_output_template = os.path.join(DOWNLOAD_DIR, "%(id)s.%(ext)s")
+
+#     try:
+#         subprocess.run(
+#             ["yt-dlp", "-f", "best", "-o", video_output_template, url],
+#             check=True
+#         )
+#         downloaded_files = os.listdir(DOWNLOAD_DIR)
+#         video_file_path = None
+#         for file in downloaded_files:
+#             if file.endswith((".mp4", ".webm")):
+#                 video_file_path = os.path.join(DOWNLOAD_DIR, file)
+#                 break
+        
+#         if not video_file_path:
+#             await message.reply("Видео не найдено.")
+#             return
+
+#         await message.reply("Генерация субтитров, это может занять несколько минут...")
+
+#         model = whisper.load_model("base")
+#         result = model.transcribe(video_file_path, fp16=False)
+
+#         subtitle_path = os.path.splitext(video_file_path)[0] + ".srt"
+#         with open(subtitle_path, "w", encoding="utf-8-sig") as srt_file:
+#             for segment in result['segments']:
+#                 start = segment['start']
+#                 end = segment['end']
+#                 text = segment['text']
+#                 srt_file.write(f"{segment['id'] + 1}\n")
+#                 srt_file.write(f"{format_time(start)} --> {format_time(end)}\n")
+#                 srt_file.write(f"{text}\n\n")
+
+#         output_video_path = os.path.splitext(video_file_path)[0] + "_with_subtitles.mp4"
+
+#         try:
+#             normalized_subtitle_path = subtitle_path.replace("\\", "/")
+#             normalized_video_path = video_file_path.replace("\\", "/")
+#             normalized_output_path = output_video_path.replace("\\", "/")
+
+#             if not os.path.isfile(normalized_subtitle_path):
+#                 raise FileNotFoundError(f"SRT файл не найден: {normalized_subtitle_path}")
+
+#             subprocess.run([
+#                 "ffmpeg",
+#                 "-i", normalized_video_path,
+#                 "-vf", f"subtitles={normalized_subtitle_path}",
+#                 "-c:a", "copy",
+#                 normalized_output_path
+#             ], check=True)
+#             print("Видео успешно обработано.")
+#         except FileNotFoundError as e:
+#             print(f"Ошибка: {e}")
+#         except subprocess.CalledProcessError as e:
+#             print(f"Ошибка FFmpeg: {e}")
+
+#         # Сжимаем видео перед отправкой, чтобы избежать ошибки "Request Entity Too Large"
+#         compressed_video_path = os.path.splitext(output_video_path)[0] + "_compressed.mp4"
+#         subprocess.run([
+#             "ffmpeg",
+#             "-i", normalized_output_path,
+#             "-b:v", "1000k",  # Устанавливаем битрейт для видео
+#             "-maxrate", "1000k",
+#             "-bufsize", "2000k",
+#             "-vf", "scale=1280:720",  # Уменьшаем разрешение до 720p
+#             "-c:a", "aac", "-b:a", "128k",
+#             compressed_video_path
+#         ], check=True)
+
+#         if os.path.isfile(compressed_video_path):
+#             await message.reply("Субтитры добавлены и видео сжато, отправляем видео...")
+#             await bot.send_video(chat_id=message.chat.id, video=FSInputFile(compressed_video_path))
+
+#             os.remove(compressed_video_path)
+#             os.remove(output_video_path)
+#             os.remove(video_file_path)
+#             os.remove(subtitle_path)
+#         else:
+#             await message.reply("Не удалось создать видео с субтитрами.")
+
+#     except Exception as e:
+#         await message.reply(f"Произошла ошибка: {str(e)}")
+
+#     finally:
+#         await state.clear()
+
+# def format_time(seconds: float) -> str:
+#     hours, remainder = divmod(seconds, 3600)
+#     minutes, seconds = divmod(remainder, 60)
+#     milliseconds = (seconds - int(seconds)) * 1000
+#     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02},{int(milliseconds):03}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @router.message(F.text == "Конвертировать видео в аудио")
 async def start_video_conversion(message: Message, state: FSMContext):
     await message.answer("Пожалуйста, отправьте видеофайл, который вы хотите конвертировать в аудио.")
@@ -406,6 +539,88 @@ async def video_to_audio(message: Message, state: FSMContext):
 
 
 from aiogram.types import ContentType
+
+# @router.message(lambda message: message.text == "Добавить субтитры к видео")
+# async def add_subtitles_to_video(message: Message, state: FSMContext):
+#     await message.answer("Пожалуйста, отправьте видео, к которому нужно добавить субтитры.")
+#     await state.set_state(Reg.waiting_for_video)
+
+# @router.message(Reg.waiting_for_video)
+# async def process_video_with_subtitles(message: Message, state: FSMContext):
+#     if message.content_type != ContentType.VIDEO:
+#         await message.reply("Пожалуйста, отправьте видео или нажмите /cancel")
+#         return
+
+#     video_file = message.video
+#     video_file_id = video_file.file_id
+
+#     file_info = await bot.get_file(video_file_id)
+#     video_file_path = os.path.join(DOWNLOAD_DIR, f"{video_file.file_id}.mp4")
+#     await bot.download_file(file_info.file_path, video_file_path)
+
+#     await message.reply("Видео загружается и обрабатывается, подождите немного...")
+
+#     try:
+#         await message.reply("Генерация субтитров, это может занять несколько минут...")
+#         model = whisper.load_model("base")
+#         result = model.transcribe(video_file_path, fp16=False)
+
+#         subtitle_path = os.path.splitext(video_file_path)[0] + ".srt"
+#         with open(subtitle_path, "w", encoding="utf-8-sig") as srt_file:
+#             for segment in result['segments']:
+#                 start = segment['start']
+#                 end = segment['end']
+#                 text = segment['text']
+#                 srt_file.write(f"{segment['id'] + 1}\n")
+#                 srt_file.write(f"{format_time(start)} --> {format_time(end)}\n")
+#                 srt_file.write(f"{text}\n\n")
+
+#         output_video_path = os.path.splitext(video_file_path)[0] + "_with_subtitles.mp4"
+#         try:
+#             normalized_subtitle_path = subtitle_path.replace("\\", "/")
+#             normalized_video_path = video_file_path.replace("\\", "/")
+#             normalized_output_path = output_video_path.replace("\\", "/")
+
+#             if not os.path.isfile(normalized_subtitle_path):
+#                 raise FileNotFoundError(f"SRT файл не найден: {normalized_subtitle_path}")
+
+#             subprocess.run([
+#                 "ffmpeg",
+#                 "-i", normalized_video_path,
+#                 "-vf", f"subtitles={normalized_subtitle_path}",
+#                 "-c:a", "copy",
+#                 normalized_output_path
+#             ], check=True)
+#             print("Видео успешно обработано.")
+#         except FileNotFoundError as e:
+#             print(f"Ошибка: {e}")
+#         except subprocess.CalledProcessError as e:
+#             print(f"Ошибка FFmpeg: {e}")
+
+#         if os.path.isfile(output_video_path):
+#             await message.reply("Субтитры добавлены, отправляем видео...")
+#             await bot.send_video(chat_id=message.chat.id, video=FSInputFile(output_video_path))
+
+#             os.remove(output_video_path)
+#             os.remove(video_file_path)
+#             os.remove(subtitle_path)
+#         else:
+#             await message.reply("Не удалось создать видео с субтитрами.")
+
+#     except Exception as e:
+#         await message.reply(f"Произошла ошибка: {str(e)}")
+#     finally:
+#         await state.clear()
+
+# def format_time(seconds: float) -> str:
+#     hours, remainder = divmod(seconds, 3600)
+#     minutes, seconds = divmod(remainder, 60)
+#     milliseconds = (seconds - int(seconds)) * 1000
+#     return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02},{int(milliseconds):03}"
+
+
+
+
 
 @router.message(lambda message: message.text == "Добавить субтитры к видео")
 async def add_subtitles_to_video(message: Message, state: FSMContext):
@@ -464,10 +679,24 @@ async def process_video_with_subtitles(message: Message, state: FSMContext):
         except subprocess.CalledProcessError as e:
             print(f"Ошибка FFmpeg: {e}")
 
-        if os.path.isfile(output_video_path):
-            await message.reply("Субтитры добавлены, отправляем видео...")
-            await bot.send_video(chat_id=message.chat.id, video=FSInputFile(output_video_path))
+        # Сжимаем видео перед отправкой, чтобы избежать ошибки "Request Entity Too Large"
+        compressed_video_path = os.path.splitext(output_video_path)[0] + "_compressed.mp4"
+        subprocess.run([
+            "ffmpeg",
+            "-i", normalized_output_path,
+            "-b:v", "1000k",  # Устанавливаем битрейт для видео
+            "-maxrate", "1000k",
+            "-bufsize", "2000k",
+            "-vf", "scale=1280:720",  # Уменьшаем разрешение до 720p
+            "-c:a", "aac", "-b:a", "128k",
+            compressed_video_path
+        ], check=True)
 
+        if os.path.isfile(compressed_video_path):
+            await message.reply("Субтитры добавлены и видео сжато, отправляем видео...")
+            await bot.send_video(chat_id=message.chat.id, video=FSInputFile(compressed_video_path))
+
+            os.remove(compressed_video_path)
             os.remove(output_video_path)
             os.remove(video_file_path)
             os.remove(subtitle_path)
@@ -490,6 +719,32 @@ def format_time(seconds: float) -> str:
 async def summarize_video_start(message: Message, state: FSMContext):
     await message.answer("Пожалуйста, отправьте видеофайл или отправьте Youtube ссылку для создания краткого содержания.")
     await state.set_state(Reg.waiting_for_summary_video)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@router.message(F.text == "Сделать краткое содержание к видео?")
+async def summarize_video_start(message: Message, state: FSMContext):
+    await message.answer("Пожалуйста, отправьте видеофайл или отправьте Youtube ссылку для создания краткого содержания.")
+    await state.set_state(Reg.waiting_for_summary_video)
+
 
 # from transformers import T5Tokenizer, T5ForConditionalGeneration
 
@@ -575,6 +830,17 @@ async def summarize_video_start(message: Message, state: FSMContext):
 # import openai
 # openai.api_key = "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"
 
+
+
+
+
+
+
+
+
+
+
+
 @router.message(Reg.waiting_for_summary_video)
 async def process_video_for_summary(message: Message, state: FSMContext):
     if message.text and (message.text.startswith("http://") or message.text.startswith("https://")):
@@ -653,3 +919,8 @@ async def process_video_for_summary(message: Message, state: FSMContext):
         if os.path.exists(video_file_path):
             os.remove(video_file_path)
         await state.clear()
+
+
+
+
+
